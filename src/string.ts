@@ -74,3 +74,48 @@ export function padEnd(text: string, size: number, character: string = '0'): str
 
 	return text + getPadding(text, size, character);
 }
+
+/**
+ * Repeats the string-coerced value n times.
+ * @return The repeated string
+ */
+export function repeat(value: any, times: number): string {
+	times = Math.floor(+times);
+	if (times !== times || times === 0) {
+		return '';
+	}
+
+	if (times < 0 || times >= Infinity) {
+		throw new RangeError('string.repeat requires a positive finite count.');
+	}
+
+	// http://jsperf.com/string-repeat2/12
+	value = String(value);
+	let accumulator = value;
+	let remainderAccumulator = '';
+	let remainderAccumulatorCount = 0;
+
+	let base2Exp = Math.log(times) / Math.log(2);
+	let base2ExpInt = Math.floor(base2Exp);
+	let remainder = times - Math.pow(2, base2ExpInt);
+
+	for (let i = 0; i < base2ExpInt; i++) {
+		accumulator += accumulator;
+
+		if (remainder > 0) {
+			remainderAccumulatorCount += remainderAccumulatorCount === 0 ? 1 : remainderAccumulatorCount;
+			if (remainderAccumulatorCount > remainder || i + 1 === base2ExpInt) {
+				for (let j = 0; j < remainder; j++) {
+					remainderAccumulator += value;
+				}
+				remainder = 0;
+			}
+			else {
+				remainderAccumulator += remainderAccumulator ? remainderAccumulator : value;
+				remainder -= remainderAccumulatorCount === 1 ? 1 : (remainderAccumulatorCount / 2);
+			}
+		}
+	}
+
+	return accumulator + remainderAccumulator;
+}

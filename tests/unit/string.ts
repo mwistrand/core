@@ -1,6 +1,6 @@
 import registerSuite = require('intern!object');
 import assert = require('intern/chai!assert');
-import {escapeRegExp, escapeXml, padStart, padEnd} from 'src/string';
+import { escapeRegExp, escapeXml, padStart, padEnd, repeat } from 'src/string';
 
 registerSuite({
 	name: 'string functions',
@@ -46,5 +46,40 @@ registerSuite({
 		assert.throw(function () {
 			padEnd('Lorem', Infinity);
 		}, RangeError);
+	},
+
+	'.repeat()': {
+		'throws on negative count'() {
+			assert.throws(function () {
+				repeat('abc', -1);
+			});
+		},
+
+		'throws on Infinity count'() {
+			assert.throws(function () {
+				repeat('abc', Infinity);
+			});
+		},
+
+		'repeats the expected number of times'() {
+			assert.strictEqual(repeat('abc', 3), 'abcabcabc');
+		},
+
+		'coerces count to integer'() {
+			assert.strictEqual(repeat('abc', 7.8), 'abcabcabcabcabcabcabc');
+		},
+
+		'repeats 0 times when passed a count that coerces to 0 or NaN'() {
+			var counts = [ NaN, undefined, null, 0, false, 'abc' ];
+			for (var i = counts.length; i--;) {
+				assert.strictEqual(repeat('abc', counts[i]), '');
+			}
+		},
+
+		'coerces target to string'() {
+			assert.strictEqual(repeat(undefined, 4), 'undefinedundefinedundefinedundefined');
+			assert.strictEqual(repeat(false, 3), 'falsefalsefalse');
+			assert.strictEqual(repeat(1, 3), '111');
+		}
 	}
 });
