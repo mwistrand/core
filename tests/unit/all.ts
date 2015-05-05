@@ -13,6 +13,7 @@ import './observers/ObjectObserver';
 import './object';
 import './on/all';
 import './Promise';
+import './Registry';
 import './queue';
 import './Scheduler';
 import './string';
