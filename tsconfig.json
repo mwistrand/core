@@ -38,6 +38,8 @@
 		"./src/observers/interfaces.d.ts",
 		"./src/on.ts",
 		"./src/queue.ts",
+		"./src/request/node.ts",
+		"./src/request/xhr.ts",
 		"./src/streams/ArraySink.ts",
 		"./src/streams/ByteLengthQueuingStrategy.ts",
 		"./src/streams/CountQueuingStrategy.ts",
