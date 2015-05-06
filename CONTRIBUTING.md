@@ -216,7 +216,7 @@ unfamiliar to those who are just starting to contribute.
 [claCheck]: http://dojofoundation.org/about/claCheck
 [Creating a Pull Request]: https://help.github.com/articles/creating-a-pull-request
 [Fork a Repo]: https://help.github.com/articles/fork-a-repo
-[styleguide]: http://dojotoolkit.org/reference-guide/developer/styleguide.html
+[styleguide]: https://github.com/SitePen/core/blob/master/STYLE.md
 [JSDoc]: http://usejsdoc.org
 [Intern]: https://theintern.github.io
 [interactive rebase]: http://git-scm.com/book/en/Git-Tools-Rewriting-History#Changing-Multiple-Commit-Messages
