@@ -15,6 +15,7 @@ import './on/all';
 import './Promise';
 import './Registry';
 import './queue';
+import './request';
 import './Scheduler';
 import './string';
 import './UrlSearchParams';

@@ -96,6 +96,8 @@
 		"./tests/unit/on/common.ts",
 		"./tests/unit/on/nodeOnly.ts",
 		"./tests/unit/queue.ts",
+		"./tests/unit/Registry.ts",
+		"./tests/unit/request.ts",
 		"./tests/unit/streams/ByteLengthQueuingStrategy.ts",
 		"./tests/unit/streams/CountQueuingStrategy.ts",
 		"./tests/unit/streams/ReadableStream.ts",
