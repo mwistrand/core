@@ -53,7 +53,21 @@ export var loader = {
 		{ name: 'tests', location: '_build/tests' },
 		{ name: 'dojo', location: 'node_modules/intern/node_modules/dojo' },
 		{ name: 'sinon', location: 'node_modules/sinon/pkg', main: 'sinon' }
-	]
+	],
+	map: {
+		'src': {
+			'http': 'tests/support/node/http',
+			'https': 'tests/support/node/https',
+			'url': 'tests/support/node/url'
+		},
+		'tests': {
+			'intern/dojo/has': 'intern/node_modules/dojo/has',
+			'intern/dojo/node': 'intern/node_modules/dojo/node',
+			'intern/dojo/Deferred': 'intern/node_modules/dojo/Deferred',
+			'http': 'tests/support/node/http',
+			'url': 'tests/support/node/url'
+		}
+	}
 };
 
 // Non-functional test suite(s) to run in each browser
