@@ -1,5 +1,5 @@
 import {Handle} from './interfaces';
-import {createHandle} from './util';
+import {createHandle} from './lang';
 
 interface Advised {
 	id?: number;

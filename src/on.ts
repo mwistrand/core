@@ -1,5 +1,5 @@
-import {Handle, EventObject} from './interfaces';
-import * as util from './util';
+import { Handle, EventObject } from './interfaces';
+import { createHandle } from './lang';
 import Evented from './Evented';
 
 // Only used for Evented and EventEmitter, as EventTarget uses EventListener
@@ -17,26 +17,27 @@ interface EventTarget {
 interface EventEmitter {
     on(event: string, listener: EventCallback): EventEmitter;
 	removeListener(event: string, listener: EventCallback): EventEmitter;
+	emit(event: string, ...args: any[]): boolean;
 }
 
-export default function on(target: EventTarget, type: string, listener: EventListener): Handle;
-export default function on(target: EventTarget, type: ExtensionEvent, listener: EventListener): Handle;
+export default function on(target: EventTarget, type: string, listener: EventListener, capture?: boolean): Handle;
+export default function on(target: EventTarget, type: ExtensionEvent, listener: EventListener, capture?: boolean): Handle;
 export default function on(target: EventEmitter, type: string, listener: EventCallback): Handle;
 export default function on(target: EventEmitter, type: ExtensionEvent, listener: EventCallback): Handle;
 export default function on(target: Evented, type: string, listener: EventCallback): Handle;
 export default function on(target: Evented, type: ExtensionEvent, listener: EventCallback): Handle;
-export default function on(target: any, type: any, listener: EventListener): Handle {
+export default function on(target: any, type: any, listener: EventListener, capture?: boolean): Handle {
 	if (type.call) {
 		return type.call(this, target, listener, false);
 	}
 
 	if (target.addEventListener && target.removeEventListener) {
-		target.addEventListener(type, listener, false);
-		return util.createHandle(function () { target.removeEventListener(type, listener, false); });
+		target.addEventListener(type, listener, capture);
+		return createHandle(function () { target.removeEventListener(type, listener, capture); });
 	}
 	else if (target.on && target.removeListener) {
 		target.on(type, listener);
-		return util.createHandle(function () { target.removeListener(type, listener); });
+		return createHandle(function () { target.removeListener(type, listener); });
 	}
 	else if (target.on) {
 		return target.on(type, listener);
