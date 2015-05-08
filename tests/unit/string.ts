@@ -1,6 +1,6 @@
 import registerSuite = require('intern!object');
 import assert = require('intern/chai!assert');
-import {escapeRegExp, escapeXml, padStart, padEnd, repeat, startsWith, includes, endsWith} from 'src/string';
+import {escapeRegExp, escapeXml, padStart, padEnd, startsWith, includes, endsWith} from 'src/string';
 
 registerSuite({
 	name: 'string functions',
@@ -10,7 +10,7 @@ registerSuite({
 	},
 
 	'.escapeXml()': function () {
-		var html: string = '<p class="text">Fox & Hound\'s</p>';
+		let html = '<p class="text">Fox & Hound\'s</p>';
 
 		assert.equal(escapeXml(html, false), '&lt;p class="text">Fox &amp; Hound\'s&lt;/p>');
 		assert.equal(escapeXml(html), '&lt;p class=&quot;text&quot;&gt;Fox &amp; Hound&#39;s&lt;/p&gt;');
@@ -48,51 +48,13 @@ registerSuite({
 		}, RangeError);
 	},
 
-	'.repeat()': {
-		'throws on negative count'() {
-			assert.throws(function () {
-				repeat('abc', -1);
-			});
-		},
-
-		'throws on Infinity count'() {
-			assert.throws(function () {
-				repeat('abc', Infinity);
-			});
-		},
-
-		'repeats the expected number of times'() {
-			assert.strictEqual(repeat('abc', 3), 'abcabcabc');
-		},
-
-		'coerces count to integer'() {
-			assert.strictEqual(repeat('abc', 7.8), 'abcabcabcabcabcabcabc');
-		},
-
-		'repeats 0 times when passed a count that coerces to 0 or NaN'() {
-			var counts = [ NaN, undefined, null, 0, false, 'abc' ];
-			for (var i = counts.length; i--;) {
-				assert.strictEqual(repeat('abc', <any> counts[i]), '');
-			}
-		},
-
-		'coerces target to string'() {
-			assert.strictEqual(repeat(undefined, 4), 'undefinedundefinedundefinedundefined');
-			assert.strictEqual(repeat(false, 3), 'falsefalsefalse');
-			assert.strictEqual(repeat(1, 3), '111');
-		}
-	},
-
 	'.startsWith()': {
-		'throws on null value or RegExp'() {
+		'throws on undefined or null string'() {
 			assert.throws(function () {
 				startsWith(undefined, 'abc');
 			});
 			assert.throws(function () {
 				startsWith(null, 'abc');
-			});
-			assert.throws(function () {
-				startsWith('abc', <any> /\s+/);
 			});
 		},
 
@@ -103,37 +65,21 @@ registerSuite({
 			assert.isFalse(startsWith('null', undefined));
 		},
 
-		'position not included or coerced to NaN'() {
-			var counts = [ NaN, undefined, null, 'abc' ];
-			for (var i = counts.length; i--;) {
-				assert.isFalse(startsWith('abc', undefined, <any> counts[i]));
-				assert.isTrue(startsWith('abc', '', <any> counts[i]));
-				assert.isFalse(startsWith('abc', '\0', <any> counts[i]));
-				assert.isTrue(startsWith('abc', 'a', <any> counts[i]));
-				assert.isFalse(startsWith('abc', 'b', <any> counts[i]));
-				assert.isTrue(startsWith('abc', 'ab', <any> counts[i]));
-				assert.isTrue(startsWith('abc', 'abc', <any> counts[i]));
-				assert.isFalse(startsWith('abc', 'abcd', <any> counts[i]));
-			}
-		},
-
-		'position is 0'() {
-			var counts = [+0, -0];
-			for (var i = counts.length; i--;) {
-				assert.isFalse(startsWith('abc', undefined, <any> counts[i]));
-				assert.isTrue(startsWith('abc', '', <any> counts[i]));
-				assert.isFalse(startsWith('abc', '\0', <any> counts[i]));
-				assert.isTrue(startsWith('abc', 'a', <any> counts[i]));
-				assert.isFalse(startsWith('abc', 'b', <any> counts[i]));
-				assert.isTrue(startsWith('abc', 'ab', <any> counts[i]));
-				assert.isTrue(startsWith('abc', 'abc', <any> counts[i]));
-				assert.isFalse(startsWith('abc', 'abcd', <any> counts[i]));
+		'position is 0 (whether explicitly, by default, or due to NaN)'() {
+			let counts = [ 0, NaN, undefined, null ];
+			for (let i = counts.length; i--;) {
+				assert.isTrue(startsWith('abc', '', counts[i]));
+				assert.isFalse(startsWith('abc', '\0', counts[i]));
+				assert.isTrue(startsWith('abc', 'a', counts[i]));
+				assert.isFalse(startsWith('abc', 'b', counts[i]));
+				assert.isTrue(startsWith('abc', 'ab', counts[i]));
+				assert.isTrue(startsWith('abc', 'abc', counts[i]));
+				assert.isFalse(startsWith('abc', 'abcd', counts[i]));
 			}
 		},
 
 		'position is Infinity'() {
-			assert.isFalse(startsWith('abc', undefined, Infinity));
-			assert.isFalse(startsWith('abc', '', Infinity));
+			assert.isTrue(includes('abc', '', Infinity));
 			assert.isFalse(startsWith('abc', '\0', Infinity));
 			assert.isFalse(startsWith('abc', 'a', Infinity));
 			assert.isFalse(startsWith('abc', 'b', Infinity));
@@ -142,26 +88,14 @@ registerSuite({
 			assert.isFalse(startsWith('abc', 'abcd', Infinity));
 		},
 
-		'position is 1 or coerced to 1'() {
-			var counts = [ 1, true ];
-			for (var i = counts.length; i--;) {
-				assert.isFalse(startsWith('abc', undefined, <any> counts[i]));
-				assert.isTrue(startsWith('abc', '', <any> counts[i]));
-				assert.isFalse(startsWith('abc', '\0', <any> counts[i]));
-				assert.isFalse(startsWith('abc', 'a', <any> counts[i]));
-				assert.isTrue(startsWith('abc', 'b', <any> counts[i]));
-				assert.isTrue(startsWith('abc', 'bc', <any> counts[i]));
-				assert.isFalse(startsWith('abc', 'abc', <any> counts[i]));
-				assert.isFalse(startsWith('abc', 'abcd', <any> counts[i]));
-			}
-		},
-
-		'value is string a non-string'() {
-			assert.isTrue(startsWith(120, '12'));
-			assert.isTrue(startsWith(true, 'tru'));
-			assert.isTrue(startsWith(false, 'fa'));
-			assert.isTrue(startsWith(NaN, 'N'));
-			assert.isTrue(startsWith(/\s+/, '/\\s'));
+		'position is 1'() {
+			assert.isTrue(startsWith('abc', '', 1));
+			assert.isFalse(startsWith('abc', '\0', 1));
+			assert.isFalse(startsWith('abc', 'a', 1));
+			assert.isTrue(startsWith('abc', 'b', 1));
+			assert.isTrue(startsWith('abc', 'bc', 1));
+			assert.isFalse(startsWith('abc', 'abc', 1));
+			assert.isFalse(startsWith('abc', 'abcd', 1));
 		},
 
 		'unicode support'() {
@@ -174,15 +108,12 @@ registerSuite({
 	},
 
 	'.includes()': {
-		'throws on null value or RegExp'() {
+		'throws on undefined or null string'() {
 			assert.throws(function () {
 				includes(undefined, 'abc');
 			});
 			assert.throws(function () {
 				includes(null, 'abc');
-			});
-			assert.throws(function () {
-				includes('abc', <any> /\s+/);
 			});
 		},
 
@@ -193,37 +124,21 @@ registerSuite({
 			assert.isFalse(includes('null', undefined));
 		},
 
-		'position not included or coerced to NaN'() {
-			var counts = [ NaN, undefined, null, 'abc' ];
-			for (var i = counts.length; i--;) {
-				assert.isFalse(includes('abc', undefined, <any> counts[i]));
-				assert.isTrue(includes('abc', '', <any> counts[i]));
-				assert.isFalse(includes('abc', '\0', <any> counts[i]));
-				assert.isTrue(includes('abc', 'a', <any> counts[i]));
-				assert.isTrue(includes('abc', 'b', <any> counts[i]));
-				assert.isTrue(includes('abc', 'ab', <any> counts[i]));
-				assert.isTrue(includes('abc', 'abc', <any> counts[i]));
-				assert.isFalse(includes('abc', 'abcd', <any> counts[i]));
-			}
-		},
-
-		'position is 0'() {
-			var counts = [+0, -0];
-			for (var i = counts.length; i--;) {
-				assert.isFalse(includes('abc', undefined, <any> counts[i]));
-				assert.isTrue(includes('abc', '', <any> counts[i]));
-				assert.isFalse(includes('abc', '\0', <any> counts[i]));
-				assert.isTrue(includes('abc', 'a', <any> counts[i]));
-				assert.isTrue(includes('abc', 'b', <any> counts[i]));
-				assert.isTrue(includes('abc', 'ab', <any> counts[i]));
-				assert.isTrue(includes('abc', 'abc', <any> counts[i]));
-				assert.isFalse(includes('abc', 'abcd', <any> counts[i]));
+		'position is 0 (whether explicitly, by default, or due to NaN)'() {
+			let counts = [ 0, NaN, undefined, null ];
+			for (let i = counts.length; i--;) {
+				assert.isTrue(includes('abc', '', counts[i]));
+				assert.isFalse(includes('abc', '\0', counts[i]));
+				assert.isTrue(includes('abc', 'a', counts[i]));
+				assert.isTrue(includes('abc', 'b', counts[i]));
+				assert.isTrue(includes('abc', 'ab', counts[i]));
+				assert.isTrue(includes('abc', 'abc', counts[i]));
+				assert.isFalse(includes('abc', 'abcd', counts[i]));
 			}
 		},
 
 		'position is Infinity'() {
-			assert.isFalse(includes('abc', undefined, Infinity));
-			assert.isFalse(includes('abc', '', Infinity));
+			assert.isTrue(includes('abc', '', Infinity));
 			assert.isFalse(includes('abc', '\0', Infinity));
 			assert.isFalse(includes('abc', 'a', Infinity));
 			assert.isFalse(includes('abc', 'b', Infinity));
@@ -232,26 +147,14 @@ registerSuite({
 			assert.isFalse(includes('abc', 'abcd', Infinity));
 		},
 
-		'position is 1 or coerced to 1'() {
-			var counts = [ 1, true ];
-			for (var i = counts.length; i--;) {
-				assert.isFalse(includes('abc', undefined, <any> counts[i]));
-				assert.isTrue(includes('abc', '', <any> counts[i]));
-				assert.isFalse(includes('abc', '\0', <any> counts[i]));
-				assert.isFalse(includes('abc', 'a', <any> counts[i]));
-				assert.isTrue(includes('abc', 'b', <any> counts[i]));
-				assert.isTrue(includes('abc', 'bc', <any> counts[i]));
-				assert.isFalse(includes('abc', 'abc', <any> counts[i]));
-				assert.isFalse(includes('abc', 'abcd', <any> counts[i]));
-			}
-		},
-
-		'value is string a non-string'() {
-			assert.isTrue(includes(120, '12'));
-			assert.isTrue(includes(true, 'tru'));
-			assert.isTrue(includes(false, 'fa'));
-			assert.isTrue(includes(NaN, 'N'));
-			assert.isTrue(includes(/\s+/, '/\\s'));
+		'position is 1'() {
+			assert.isTrue(includes('abc', '', 1));
+			assert.isFalse(includes('abc', '\0', 1));
+			assert.isFalse(includes('abc', 'a', 1));
+			assert.isTrue(includes('abc', 'b', 1));
+			assert.isTrue(includes('abc', 'bc', 1));
+			assert.isFalse(includes('abc', 'abc', 1));
+			assert.isFalse(includes('abc', 'abcd', 1));
 		},
 
 		'unicode support'() {
@@ -264,15 +167,12 @@ registerSuite({
 	},
 
 	'.endsWith()': {
-		'throws on null value or RegExp'() {
+		'throws on undefined or null string'() {
 			assert.throws(function () {
 				endsWith(undefined, 'abc');
 			});
 			assert.throws(function () {
 				endsWith(null, 'abc');
-			});
-			assert.throws(function () {
-				endsWith('abc', <any> /\s+/);
 			});
 		},
 
@@ -283,65 +183,37 @@ registerSuite({
 			assert.isFalse(endsWith('null', undefined));
 		},
 
-		'position not included or coerced to NaN'() {
-			var counts = [ NaN, undefined, null, 'abc' ];
-			for (var i = counts.length; i--;) {
-				assert.isFalse(endsWith('abc', undefined, <any> counts[i]));
-				assert.isTrue(endsWith('abc', '', <any> counts[i]));
-				assert.isFalse(endsWith('abc', '\0', <any> counts[i]));
-				assert.isTrue(endsWith('abc', 'c', <any> counts[i]));
-				assert.isFalse(endsWith('abc', 'b', <any> counts[i]));
-				assert.isTrue(endsWith('abc', 'bc', <any> counts[i]));
-				assert.isTrue(endsWith('abc', 'abc', <any> counts[i]));
-				assert.isFalse(endsWith('abc', 'abcd', <any> counts[i]));
+		'position is Infinity, not included, or NaN'() {
+			let counts = [ Infinity, undefined, null, NaN ];
+			for (let i = counts.length; i--;) {
+				assert.isTrue(endsWith('abc', '', counts[i]));
+				assert.isFalse(endsWith('abc', '\0', counts[i]));
+				assert.isTrue(endsWith('abc', 'c', counts[i]));
+				assert.isFalse(endsWith('abc', 'b', counts[i]));
+				assert.isTrue(endsWith('abc', 'bc', counts[i]));
+				assert.isTrue(endsWith('abc', 'abc', counts[i]));
+				assert.isFalse(endsWith('abc', 'abcd', counts[i]));
 			}
 		},
 
 		'position is 0'() {
-			var counts = [+0, -0];
-			for (var i = counts.length; i--;) {
-				assert.isFalse(endsWith('abc', undefined, <any> counts[i]));
-				assert.isTrue(endsWith('abc', '', <any> counts[i]));
-				assert.isFalse(endsWith('abc', '\0', <any> counts[i]));
-				assert.isFalse(endsWith('abc', 'a', <any> counts[i]));
-				assert.isFalse(endsWith('abc', 'b', <any> counts[i]));
-				assert.isFalse(endsWith('abc', 'ab', <any> counts[i]));
-				assert.isFalse(endsWith('abc', 'abc', <any> counts[i]));
-				assert.isFalse(endsWith('abc', 'abcd', <any> counts[i]));
-			}
+			assert.isTrue(endsWith('abc', '', 0));
+			assert.isFalse(endsWith('abc', '\0', 0));
+			assert.isFalse(endsWith('abc', 'a', 0));
+			assert.isFalse(endsWith('abc', 'b', 0));
+			assert.isFalse(endsWith('abc', 'ab', 0));
+			assert.isFalse(endsWith('abc', 'abc', 0));
+			assert.isFalse(endsWith('abc', 'abcd', 0));
 		},
 
-		'position is Infinity'() {
-			assert.isFalse(endsWith('abc', undefined, Infinity));
-			assert.isTrue(endsWith('abc', '', Infinity));
-			assert.isFalse(endsWith('abc', '\0', Infinity));
-			assert.isTrue(endsWith('abc', 'c', Infinity));
-			assert.isFalse(endsWith('abc', 'b', Infinity));
-			assert.isTrue(endsWith('abc', 'bc', Infinity));
-			assert.isTrue(endsWith('abc', 'abc', Infinity));
-			assert.isFalse(endsWith('abc', 'abcd', Infinity));
-		},
-
-		'position is 1 or coerced to 1'() {
-			var counts = [ 1, true ];
-			for (var i = counts.length; i--;) {
-				assert.isFalse(endsWith('abc', undefined, <any> counts[i]));
-				assert.isTrue(endsWith('abc', '', <any> counts[i]));
-				assert.isFalse(endsWith('abc', '\0', <any> counts[i]));
-				assert.isTrue(endsWith('abc', 'a', <any> counts[i]));
-				assert.isFalse(endsWith('abc', 'b', <any> counts[i]));
-				assert.isFalse(endsWith('abc', 'bc', <any> counts[i]));
-				assert.isFalse(endsWith('abc', 'abc', <any> counts[i]));
-				assert.isFalse(endsWith('abc', 'abcd', <any> counts[i]));
-			}
-		},
-
-		'value is string a non-string'() {
-			assert.isTrue(endsWith(120, '20'));
-			assert.isTrue(endsWith(true, 'rue'));
-			assert.isTrue(endsWith(false, 'lse'));
-			assert.isTrue(endsWith(NaN, 'N'));
-			assert.isTrue(endsWith(/\s+/, '\\s+/'));
+		'position is 1'() {
+			assert.isTrue(endsWith('abc', '', 1));
+			assert.isFalse(endsWith('abc', '\0', 1));
+			assert.isTrue(endsWith('abc', 'a', 1));
+			assert.isFalse(endsWith('abc', 'b', 1));
+			assert.isFalse(endsWith('abc', 'bc', 1));
+			assert.isFalse(endsWith('abc', 'abc', 1));
+			assert.isFalse(endsWith('abc', 'abcd', 1));
 		},
 
 		'unicode support'() {

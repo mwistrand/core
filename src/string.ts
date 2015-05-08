@@ -35,23 +35,39 @@ function getPadding(text: string, size: number, character: string = '0'): string
 	return padding;
 }
 
-function validateSubstringComparisonArguments(value: any, search: any): void {
-	if (value == null) {
-		throw new TypeError();
+/**
+ * Validates that text is defined, and normalizes position (based on the given default if the input is NaN).
+ * Used by startsWith, includes, and endsWith.
+ * @return Normalized position.
+ */
+function normalizeSubstringArgs(name: string, text: string, search: string, position: number,
+		isEnd: boolean = false): [ string, string, number ] {
+	if (text == null) {
+		throw new TypeError('string.' + name + ' requires a valid string to search against.');
 	}
 
-	if (Object.prototype.toString.call(search) === '[object RegExp]') {
-		throw new TypeError();
-	}
+	let length = text.length;
+	position = position !== position ? (isEnd ? length : 0) : position;
+	return [ text, String(search), Math.min(Math.max(position, 0), length) ];
 }
 
-function substringCompare(value: string, search: string, start: number, length: number): boolean {
-	for (let i = start; i < length; i++) {
-		if (value[i] !== search[i - start]) {
-			return false
-		}
+/**
+ * Determines whether a string ends with the given substring.
+ * @return Boolean indicating if the search string was found at the end of the given string
+ */
+export function endsWith(text: string, search: string, endPosition?: number): boolean {
+	if (endPosition == null) {
+		endPosition = text.length;
 	}
-	return true;
+
+	[ text, search, endPosition ] = normalizeSubstringArgs('endsWith', text, search, endPosition, true);
+
+	let start = endPosition - search.length;
+	if (start < 0) {
+		return false;
+	}
+
+	return text.slice(start, endPosition) === search;
 }
 
 export function escapeRegExp(text: string): string {
@@ -68,6 +84,15 @@ export function escapeXml(xml: string, forAttribute: boolean = true): string {
 	return xml.replace(pattern, function (character: string): string {
 		return escapeXmlMap[character];
 	});
+}
+
+/**
+ * Determines whether a string includes the given substring (optionally starting from a given index).
+ * @return Boolean indicating if the search string was found within the given string
+ */
+export function includes(text: string, search: string, position: number = 0): boolean {
+	[ text, search, position ] = normalizeSubstringArgs('includes', text, search, position);
+	return text.indexOf(search, position) !== -1;
 }
 
 export function padStart(text: string, size: number, character: string = '0'): string {
@@ -95,133 +120,17 @@ export function padEnd(text: string, size: number, character: string = '0'): str
 }
 
 /**
- * Repeats the string coerced value n times.
- * @return The repeated string coerced value
+ * Determines whether a string begins with the given substring (optionally starting from a given index).
+ * @return Boolean indicating if the search string was found at the beginning of the given string
  */
-export function repeat(value: any, times: number): string {
-	times = Math.floor(+times);
-	if (times != times || times === 0) {
-		return '';
-	}
-
-	// check for range errors
-	if (times < 0 || times >= Infinity) {
-		throw new RangeError('repeat times value must be within the following boundaries (0, Infinity]');
-	}
-
-	// http://jsperf.com/string-repeat2/12
-	value = String(value);
-	let accumulator = value;
-	let remainderAccumulator = '';
-	let remainderAccumulatorCount = 0;
-
-	let base2Exp = Math.log(times) / Math.log(2);
-	let base2ExpInt = Math.floor(base2Exp);
-	let remainder = times - Math.pow(2, base2ExpInt);
-
-	for (let i = 0; i < base2ExpInt; i++) {
-		accumulator += accumulator;
-
-		if (remainder > 0) {
-			remainderAccumulatorCount += remainderAccumulatorCount === 0 ? 1 : remainderAccumulatorCount;
-			if (remainderAccumulatorCount > remainder || i + 1 === base2ExpInt) {
-				for (let j = 0; j < remainder; j++) {
-					remainderAccumulator += value;
-				}
-				remainder = 0;
-			}
-			else {
-				remainderAccumulator += remainderAccumulator ? remainderAccumulator : value;
-				remainder -= remainderAccumulatorCount === 1 ? 1 : (remainderAccumulatorCount / 2);
-			}
-		}
-	}
-
-	return accumulator + remainderAccumulator;
-};
-
-/**
- * Determines whether a string begins with the characters and another string
- * @return a boolean indicating the truth of the comparison
- */
-export function startsWith(value: any, search: any, position: number = 0): boolean {
-	validateSubstringComparisonArguments(value, search);
-
-	value = String(value);
+export function startsWith(text: string, search: string, position: number = 0): boolean {
 	search = String(search);
-	position = Math.floor(+position);
+	[ text, search, position ] = normalizeSubstringArgs('startsWith', text, search, position);
 
-	if (position != position) {
-		position = 0;
-	}
-
-	let valueLength = value.length;
-	let searchLength = search.length;
-	let start = Math.min(Math.max(position, 0), valueLength);
-
-	if (searchLength + position > valueLength) {
+	let end = position + search.length;
+	if (end > text.length) {
 		return false;
 	}
 
-	return substringCompare(value, search, start, searchLength + position);
-};
-
-/**
- * Determines whether a string includes the characters and another string
- * @return a boolean indicating the truth of the comparison
- */
-export function includes(value: any, search: string, position: number = 0): boolean {
-	validateSubstringComparisonArguments(value, search);
-
-	value = String(value);
-	search = String(search);
-
-	position = Math.floor(+position);
-
-	if (position != position) {
-		position = 0;
-	}
-
-	let valueLength = value.length;
-	let searchLength = search.length;
-	let start = Math.min(Math.max(position, 0), valueLength);
-
-	if (searchLength + position > valueLength) {
-		return false;
-	}
-
-	return value.indexOf(search, position) !== -1;
-}
-
-/**
- * Determines whether a string ends with the characters and another string
- * @return a boolean indicating the truth of the comparison
- */
-export function endsWith(value: any, search: string, position?: number): boolean {
-	validateSubstringComparisonArguments(value, search);
-
-	value = String(value);
-	search = String(search);
-
-	let valueLength = value.length;
-	let searchLength = search.length;
-
-	if (position == null || position >= Infinity) {
-		position = valueLength;
-	}
-
-	position = Math.floor(+position);
-
-	if (position != position) {
-		position = valueLength;
-	}
-
-	let end = Math.min(Math.max(position, 0), valueLength);
-	let start = end - searchLength;
-
-	if (start < 0) {
-		return false;
-	}
-
-	return substringCompare(value, search, start, position);
+	return text.slice(position, end) === search;
 }
