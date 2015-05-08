@@ -82,7 +82,13 @@ module.exports = function (grunt) {
 				expand: true,
 				cwd: 'typings/',
 				src: [ '**/*.d.ts', '!tsd.d.ts' ],
-				dest: 'dist/_typings/'
+				dest: 'dist/typings/'
+			},
+			testData: {
+				expand: true,
+				cwd: 'tests/',
+				src: [ '**/*.json' ],
+				dest: '_build/tests/'
 			}
 		},
 
