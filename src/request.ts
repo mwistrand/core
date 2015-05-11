@@ -13,12 +13,12 @@ class ProviderRegistry extends Registry<RequestProvider> {
 		if (typeof test === 'string') {
 			entryTest = (url, options) => {
 				return test === url;
-			}
+			};
 		}
 		else if (test instanceof RegExp) {
 			entryTest = (url, options) => {
 				return test.test(url);
-			}
+			};
 		}
 		else {
 			entryTest = <RequestProviderTest> test;
@@ -35,12 +35,12 @@ class FilterRegistry extends Registry<RequestFilter> {
 		if (typeof test === 'string') {
 			entryTest = (response, url, options) => {
 				return test === url;
-			}
+			};
 		}
 		else if (test instanceof RegExp) {
 			entryTest = (response, url, options) => {
 				return test.test(url);
-			}
+			};
 		}
 		else {
 			entryTest = <RequestFilterTest> test;
@@ -129,7 +129,6 @@ else if (has('host-browser')) {
  * Make a request, returning a Promise that will resolve or reject when the request completes.
  */
 let request = <Request> function <T>(url: string, options: RequestOptions = {}): RequestPromise<T> {
-	let args: any[] = Array.prototype.slice.call(arguments, 0);
 	let promise = <RequestPromise<T>> request.providerRegistry.match(url, options)(url, options)
 		.then(function (response: Response<T>) {
 			return Task.resolve(request.filterRegistry.match(response, url, options)(response, url, options))

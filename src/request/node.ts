@@ -12,7 +12,7 @@ let version = '2.0.0-pre';
 interface Options {
 	agent?: any;
 	auth?: string;
-	headers?:{ [name: string]: string; };
+	headers?: { [name: string]: string; };
 	host?: string;
 	hostname?: string;
 	localAddress?: string;
@@ -48,7 +48,7 @@ export interface NodeRequestOptions extends RequestOptions {
 	rejectUnauthorized?: boolean;
 	secureProtocol?: string;
 	socketPath?: string;
-	socketOptions?:{
+	socketOptions?: {
 		keepAlive?: number;
 		noDelay?: boolean;
 		timeout?: number;
@@ -165,7 +165,6 @@ export default function node<T>(url: string, options: NodeRequestOptions = {}): 
 	request.once('response', function (nativeResponse: http.ClientResponse): void {
 		var data: any[];
 		var loaded: number = 0;
-		var total: number = +nativeResponse.headers['content-length'];
 
 		response.nativeResponse = nativeResponse;
 		response.statusCode = nativeResponse.statusCode;

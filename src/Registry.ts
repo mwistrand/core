@@ -13,16 +13,16 @@ interface Entry<T> {
  * A registry of values tagged with matchers.
  */
 export default class Registry<T> {
+	private _defaultValue: T;
+	private _entries: Entry<T>[];
+
 	/**
 	 * Construct a new Registry, optionally containing a given default value.
 	 */
 	constructor(defaultValue?: T) {
-		this.defaultValue = defaultValue;
-		this.entries = [];
+		this._defaultValue = defaultValue;
+		this._entries = [];
 	}
-
-	private entries: Entry<T>[];
-	private defaultValue: T;
 
 	/**
 	 * Return the first entry in this registry that matches the given arguments. If no entry matches and the registry
@@ -32,7 +32,7 @@ export default class Registry<T> {
 	 * @returns the matching value, or a default value if one exists.
 	 */
 	match(...args: any[]): T {
-		let entries = this.entries.slice(0);
+		let entries = this._entries.slice(0);
 		let entry: Entry<T>;
 
 		for (let i = 0; (entry = entries[i]); ++i) {
@@ -41,8 +41,8 @@ export default class Registry<T> {
 			}
 		}
 
-		if (this.defaultValue !== undefined) {
-			return this.defaultValue;
+		if (this._defaultValue !== undefined) {
+			return this._defaultValue;
 		}
 
 		throw new Error('No match found');
@@ -56,7 +56,7 @@ export default class Registry<T> {
 	 * @param first If true, the newly registered test and value will be the first entry in the registry.
 	 */
 	register(test: Test, value: T, first?: boolean): Handle {
-		let entries = this.entries;
+		let entries = this._entries;
 		let entry: Entry<T> = {
 			test: test,
 			value: value
@@ -66,7 +66,7 @@ export default class Registry<T> {
 
 		return {
 			destroy: function () {
-				this.destroy = function ():void {};
+				this.destroy = function (): void {};
 				let i = 0;
 				while ((i = entries.indexOf(entry, i)) > -1) {
 					entries.splice(i, 1);
