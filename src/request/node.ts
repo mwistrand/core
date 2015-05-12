@@ -1,9 +1,14 @@
+import RequestTimeoutError from './errors/RequestTimeoutError';
 import { Handle } from '../interfaces';
 import * as http from 'http';
 import * as https from 'https';
 // TODO replace with async/Task when that's merged
 import { default as Task } from '../Promise';
-import request, { RequestError, RequestOptions, RequestPromise, Response } from '../request';
+import { RequestError, RequestOptions, RequestPromise, Response } from '../request';
+import ReadableNodeStreamSource from '../streams/adapters/ReadableNodeStreamSource';
+import WritableNodeStreamSink from '../streams/adapters/WritableNodeStreamSink';
+import ReadableStream from '../streams/ReadableStream';
+import WritableStream from '../streams/WritableStream';
 import * as urlUtil from 'url';
 
 // TODO: Where should the dojo version come from? It used to be kernel, but we don't have that.
@@ -33,7 +38,7 @@ interface HttpsOptions extends Options {
 	secureProtocol?: string;
 }
 
-export interface NodeRequestOptions extends RequestOptions {
+export interface NodeRequestOptions<T> extends RequestOptions {
 	agent?: any;
 	ca?: any;
 	cert?: string;
@@ -55,7 +60,7 @@ export interface NodeRequestOptions extends RequestOptions {
 	};
 	streamData?: boolean;
 	streamEncoding?: string;
-	streamTarget?: any;
+	streamTarget?: WritableStream<T>;
 }
 
 function normalizeHeaders(headers: { [name: string]: string }): { [name: string]: string } {
@@ -67,7 +72,7 @@ function normalizeHeaders(headers: { [name: string]: string }): { [name: string]
 	return normalizedHeaders;
 }
 
-export default function node<T>(url: string, options: NodeRequestOptions = {}): RequestPromise<T> {
+export default function node<T>(url: string, options: NodeRequestOptions<T> = {}): RequestPromise<T> {
 	let resolve: (value: Response<T> | RequestPromise<T>) => void;
 	let reject: (error: Error) => void;
 	// TODO: use proper Task signature when Task is available
@@ -93,7 +98,6 @@ export default function node<T>(url: string, options: NodeRequestOptions = {}): 
 		throw error;
 	});
 
-	console.log('urlUtil:', urlUtil.parse);
 	let parsedUrl = urlUtil.parse(options.proxy || url);
 
 	var requestOptions = <HttpsOptions> {
@@ -158,14 +162,12 @@ export default function node<T>(url: string, options: NodeRequestOptions = {}): 
 
 		if ('keepAlive' in options.socketOptions) {
 			var initialDelay: number = options.socketOptions.keepAlive;
-			request.setSocketKeepAlive(initialDelay >= 0, initialDelay || 0);
+			request.setSocketKeepAlive(initialDelay >= 0, initialDelay);
 		}
 	}
 
+	let timeout: Handle;
 	request.once('response', function (nativeResponse: http.ClientResponse): void {
-		var data: any[];
-		var loaded: number = 0;
-
 		response.nativeResponse = nativeResponse;
 		response.statusCode = nativeResponse.statusCode;
 
@@ -184,28 +186,38 @@ export default function node<T>(url: string, options: NodeRequestOptions = {}): 
 			return;
 		}
 
-		if (!options.streamData) {
-			data = [];
-		}
-
 		options.streamEncoding && nativeResponse.setEncoding(options.streamEncoding);
 		if (options.streamTarget) {
-			nativeResponse.pipe(options.streamTarget);
-			options.streamTarget.once('error', function (error: RequestError<T>): void {
-				nativeResponse.unpipe(options.streamTarget);
-				request.abort();
-				error.response = response;
-				reject(error);
-			});
-			options.streamTarget.once('close', function (): void {
-				resolve(response);
-			});
+			const responseSource = new ReadableNodeStreamSource(nativeResponse);
+			const responseReadableStream = new ReadableStream(responseSource);
+
+			responseReadableStream.pipeTo(<any> options.streamTarget)
+				.then(
+					function () {
+						resolve(response);
+					},
+					function (error: RequestError<T>) {
+						options.streamTarget.abort(error);
+						request.abort();
+						error.response = response;
+						reject(error);
+					}
+				);
 		}
 
-		nativeResponse.on('data', function (chunk: any): void {
-			options.streamData || data.push(chunk);
-			loaded += typeof chunk === 'string' ? Buffer.byteLength(chunk, options.streamEncoding) : chunk.length;
-		});
+		let data: any[];
+		let loaded: number;
+		if (!options.streamData) {
+			data = [];
+			loaded = 0;
+
+			nativeResponse.on('data', function (chunk: any): void {
+				data.push(chunk);
+				loaded += (typeof chunk === 'string') ?
+					Buffer.byteLength(chunk, options.streamEncoding) :
+					chunk.length;
+			});
+		}
 
 		nativeResponse.once('end', function (): void {
 			timeout && timeout.destroy();
@@ -219,17 +231,27 @@ export default function node<T>(url: string, options: NodeRequestOptions = {}): 
 			if (!options.streamTarget) {
 				resolve(response);
 			}
+			else {
+				options.streamTarget.close();
+			}
 		});
 	});
 
 	request.once('error', reject);
 
 	if (options.data) {
-		if (options.data.pipe) {
-			options.data.pipe(request);
+		if (options.data instanceof ReadableStream) {
+			const requestSink = new WritableNodeStreamSink(request);
+			const writableRequest = new WritableStream(requestSink);
+			options.data.pipeTo(writableRequest)
+				.catch(function (error: RequestError<T>) {
+					error.response = response;
+					writableRequest.abort(error);
+					reject(error);
+				});
 		}
 		else {
-			request.end(options.data, options.dataEncoding);
+			request.end();
 		}
 	}
 	else {
@@ -237,18 +259,18 @@ export default function node<T>(url: string, options: NodeRequestOptions = {}): 
 	}
 
 	if (options.timeout > 0 && options.timeout !== Infinity) {
-		var timeout: Handle = (function (): Handle {
-			var timer = setTimeout(function (): void {
-				var error = new Error('Request timed out after ' + options.timeout + 'ms');
-				error.name = 'RequestTimeoutError';
+		timeout = (function (): Handle {
+			const timer = setTimeout(function (): void {
+				const error = new RequestTimeoutError('Request timed out after ' + options.timeout + 'ms');
+				error.response = response;
 				// TODO: uncomment when Task is available
 				// task.cancel(error);
+				reject(error);
 			}, options.timeout);
 
 			// TODO: use lang.createHandle
 			return {
 				destroy: function (): void {
-					this.destroy = function (): void {};
 					clearTimeout(timer);
 				}
 			};

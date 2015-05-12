@@ -15,6 +15,7 @@ import './on/all';
 import './Promise';
 import './Registry';
 import './queue';
+import 'dojo/has!host-node?./request/node:./request/xhr';
 import './request';
 import './Scheduler';
 import './string';

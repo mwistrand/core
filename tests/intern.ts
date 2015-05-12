@@ -58,6 +58,7 @@ export var loader = {
 		'src': {
 			'http': 'tests/support/node/http',
 			'https': 'tests/support/node/https',
+			'stream': 'tests/support/node/stream',
 			'url': 'tests/support/node/url'
 		},
 		'tests': {
@@ -65,6 +66,8 @@ export var loader = {
 			'intern/dojo/node': 'intern/node_modules/dojo/node',
 			'intern/dojo/Deferred': 'intern/node_modules/dojo/Deferred',
 			'http': 'tests/support/node/http',
+			'sinon': 'node_modules/sinon/pkg',
+			'stream': 'tests/support/node/stream',
 			'url': 'tests/support/node/url'
 		}
 	}
