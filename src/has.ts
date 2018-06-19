@@ -1,4 +1,5 @@
 import global from '@dojo/shim/global';
+import Promise from '@dojo/shim/Promise';
 import has, { add } from '@dojo/shim/support/has';
 
 export * from '@dojo/shim/support/has';
